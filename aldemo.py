@@ -4,7 +4,7 @@ import inspect
 import warnings
 import time
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C, Matern, DotProduct, RationalQuadratic
+from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C, RationalQuadratic
 from sklearn.ensemble import VotingRegressor
 from sklearn.svm import SVC
 from sklearn.cluster import MeanShift
@@ -13,9 +13,15 @@ from utils import crude_grad
 from DOE.passive_learning import lhs
 from DOE.active_learning import *
 
+
+"""
+Active Learning Demo (2022/02/07, C. Lee (cheolheil@vt.edu))
+This script is the main script for active learning demo.
+Note that the simulation will be different for each iteration due to not-fixed random seed.
+"""
+
 # don't show warnings
 warnings.filterwarnings("ignore")
-
 
 # simulation function to learn
 def f(x, noise=False):
@@ -36,7 +42,7 @@ def f(x, noise=False):
 print('=========== Welcome to Active Learning Demo! ===========')
 user_choice = input('Choose a strategy from:\n1. Random\n2. Uncertainty Sampling\n3. Variance Reduction (IMSE)\n4. Maximin Distance\n5. Query by Committee\n6. Partitioned Active Learning\n--> Enter the number of the strategy (Press Ctrl+C to exit): ')
 
-methods = {'1': random_sampling, '2': uncertainty_sampling, '3': fast_imse, '4': maximin_dist, '5': var_qbc, '6': fast_pimse}
+methods = {'1': random_sampling, '2': uncertainty_sampling, '3': imse, '4': maximin_dist, '5': var_qbc, '6': pimse}
 strategies = {'1': 'Random', '2': 'Uncertainty Sampling', '3': 'Variance Reduction', '4': 'Maximin Distance', '5': 'Query by Committee', '6': 'Partitioned Active Learning'}
 acq_fun = methods[user_choice]
 strategy = strategies[user_choice]
@@ -65,7 +71,7 @@ if acq_fun == var_qbc:
     model = VotingRegressor(estimators=[('gp_lf', GaussianProcessRegressor(kernel=kernel1, n_restarts_optimizer=5)),
                                             ('gp_dot', GaussianProcessRegressor(kernel=kernel2, n_restarts_optimizer=5)),
                                             ('gp_hf', GaussianProcessRegressor(kernel=kernel3, n_restarts_optimizer=5))])
-elif acq_fun == fast_pimse:
+elif acq_fun == pimse:
     # model for PAL
     kernel = C() * RBF(1., (1e-2, 1e2))
     grad_init, r_max = crude_grad(X, y)
